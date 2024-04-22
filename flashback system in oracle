@@ -1,0 +1,102 @@
+Oracle Flashback
+Oracle flashback allows you to move database back in time. You can use flashback technology to move entire database or a particular table inside database.
+
+Flashback Table Before Drop 
+
+Flashback Table 
+
+Flashback Database 
+
+Enable Flashback 
+
+Create Sample User 
+
+Flashback Database to SCN or Timestamp 
+
+
+Note: only for flashback database activity, you must enable flashback database. For all other flashback activities, you do not need to enable flashback database
+
+
+Flashback Table Before Drop
+
+You can flashback a dropped table from recyclebin using flashback table command
+
+SHOW RECYCLEBIN;
+
+FLASHBACK TABLE "BIN$gk3lsj/3akk5hg3j2lkl5j3d==$0" TO BEFORE DROP;
+
+or
+
+FLASHBACK TABLE SCOTT.FLASH_EMP TO BEFORE DROP;
+You can even rename table while flashing it back from recyclebin
+
+FLASHBACK TABLE SCOTT.FLASH_EMP TO BEFORE DROP RENAME TO NEW_EMP;
+Note: Recyclebin must be enabled to use flashback table before drop
+
+
+Flashback Table
+
+You can flashback table to a particular SCN or time in the past. Before you can flashback table, you must enable row movement
+
+ALTER TABLE hr.employees ENABLE ROW MOVEMENT;
+Now you are ready to flashback table to SCN or timestamp
+
+FLASHBACK TABLE EMP TO SCN <scn_no>;
+
+FLASHBACK TABLE HR.EMPLOYEES TO TIMESTAMP 
+TO_TIMESTAMP(‘2016-05-12 18:30:00’, ‘YYYY-MM-DD HH24:MI:SS’);
+Note: for flashback table, enabling FLASHBACK DATABASE is not required at all
+
+
+Flashback Database
+
+We can move an entire database back in time to a particular SCN or a timestamp. Flashback Database must be already enabled on the database to user this feature.
+
+
+Enable Flashback Database
+
+Make sure DB_RECOVERY_FILE_DEST parameter is set. This is the location where Oracle will store flashback logs
+
+SQL> alter system set db_recovery_file_dest='/u02/flash_logs' SCOPE=spfile;
+Set DB_RECOVERY_FILE_DEST parameter as per requirement
+
+SQL> alter system set db_recovery_file_dest_size=50G SCOPE=spfile;
+Set the DB_FLASHBACK_RETENTION_TARGET parameter which specifies the upper limit (in minutes) on how far back in time the database can be flashed back
+
+SQL> alter system set db_flashback_retention_target=2880;
+Enable flashback database which requires database bounce
+
+SQL> shutdown immediate;
+SQL> startup mount;
+SQL> alter database flashback on;
+SQL> alter database open;
+
+SQL> select flashback_on from v$database;
+
+Create Sample User
+
+Let us capture the database SCN number before we create a user
+
+SQL> SELECT current_scn, SYSTIMESTAMP FROM v$database;
+
+Current SCN: 2703232
+Create a user FLASH_USR and try to connect the database with same user
+
+SQL> create user flash_usr identified by flash_usr;
+SQL> grant connect, resource to flash_usr;
+SQL> conn flash_usr/flash_usr;
+
+Flashback Database to SCN or Timestamp
+
+Assume that the user has been created by mistake and you want to flashback database to the SCN just before the user creation. Shutdown DB and startup mount
+
+SQL> shut immediate;
+SQL> startup mount;
+Flashback database to SCN before user creation and open database with resetlogs
+
+SQL> Flashback database to scn 2703232;
+SQL> Alter database open resetlogs;
+You can flashback database to particular timestamp too
+
+FLASHBACK DATABASE TO TIMESTAMP 
+TO_TIMESTAMP(‘2016-05-12 18:30:00’, ‘YYYY-MM-DD HH24:MI:SS’);
